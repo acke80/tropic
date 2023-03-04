@@ -1,6 +1,8 @@
 ```cpp
 #include <thread> 
 
+#include "tropic.h"
+
 // Create a publisher
 tropic::Publisher pub;
 pub.addTopic<int>("my_topic");
