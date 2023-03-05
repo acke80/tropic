@@ -1,7 +1,10 @@
 # :palm_tree: Tropic 
+## A single header Publish-subscribe implementation in C++17
 
 ```cpp
+#include <iostream>
 #include <thread> 
+#include <chrono>
 
 #include "tropic.h"
 
@@ -13,23 +16,38 @@ pub.addTopic<int>("my_topic");
 tropic::Subscriber sub;
 sub.subscribe<int>("my_topic");
 
-// Publish data to topic
-pub.publish("my_topic", 42);
-
-// Subscriber is busy waiting for messsage on some other thread
-std::thread t([]{
-    while(true)
+// Subscriber is busy waiting for messsages on some other thread
+std::thread sub_thread([&]()
+{
+    while (true)
     {
         // While there are messages to process
-        while(sub.gotMessage())
+        while (sub.gotMessage())
         {
-            // Check what topic the next message has
-            if(sub.nextMessageTopic() == "my_topic")
+            std::cout << "Got Message!";
+
+            // Pop the message
+            tropic::Message message = sub.popMessage();
+
+            // Check the message topic
+            if (message.topic_tag == "my_topic")
             {
-                // Fetch the message
-                int message = static_cast<int>(sub.popMessage());
+                // Cast the data properly
+                int data = std::any_cast<int>(message.data);
+            
+                std::cout << " Data: " << data << std::endl;
             }
         }
     }
 });
+
+// Publish some data on main thread
+using namespace std::chrono_literals;
+for (int i = 0; i < 10; ++i)
+{
+    pub("my_topic", i); // pub.publish("my_topic", i);
+    std::this_thread::sleep_for(1s);
+}
+
+sub_thread.join();
 ```
